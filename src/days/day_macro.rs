@@ -1,5 +1,3 @@
-use crate::days::DayErrors;
-
 #[macro_export]
 macro_rules! define_advent_days {
     ($($day:ident),*) => {

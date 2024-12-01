@@ -49,14 +49,14 @@ fn execute_solve(args: &SolveArgs) -> Result<Solution, Box<dyn Error>> {
     let day: Day = args.day_number.try_into()?;
     let solver = day.to_solver();
 
-    Ok(Solution(solver.solve_part1(&input), solver.solve_part2(&input)))
+    Ok(Solution(solver.solve_part1(&input)?, solver.solve_part2(&input)?))
 }
 
 fn main() {
     let cli = Cli::parse();
 
     let result = match &cli.command {
-        Commands::Download(args) => {
+        Commands::Download(_args) => {
             todo!()
         }
         Commands::Solve(args) => {
@@ -69,7 +69,7 @@ fn main() {
             println!("{}", e)
         }
         Ok(solution) => {
-            println!("Part1: {} \n Part2: {}", solution.0, solution.1)
+            println!("Part1: {} \n\nPart2: {}", solution.0, solution.1)
         }
     }
 
