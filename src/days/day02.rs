@@ -82,10 +82,28 @@ fn get_report_status(levels: &Vec<i32>) -> Result<ReportStatus, ReportErrors> {
     Ok(Safe)
 }
 
-fn to_report(levels: &Vec<i32>, error_tolerance: &i8) -> Result<Report, ReportErrors> {
+fn to_report(levels: &Vec<i32>) -> Result<Report, ReportErrors> {
     Ok(Report {
         levels: levels.clone(),
         status: get_report_status(levels)?,
+    })
+}
+
+fn to_report_status_with_level_removal(levels: &Vec<i32>) -> Result<Report, ReportErrors> {
+    let mut report_status = get_report_status(levels)?;
+    let mut updated_levels = levels.clone();
+    let mut index_to_remove = 0;
+
+    while report_status == Unsafe && index_to_remove < levels.len() {
+        updated_levels = levels.clone();
+        updated_levels.remove(index_to_remove);
+        report_status = get_report_status(&updated_levels)?;
+        index_to_remove += 1
+    }
+
+    Ok(Report {
+        levels: updated_levels,
+        status: report_status
     })
 }
 
@@ -102,11 +120,10 @@ fn parse_input(input: &str) -> Vec<Vec<i32>> {
 
 impl DaySolver for Day2Solver {
     fn solve_part1(&self, input: &str) -> Result<String, DayErrors> {
-        let error_tolerance: i8 = 0;
         let reports: Vec<Report> = parse_input(input)
             .iter()
             .map(|levels| -> Result<Report, ReportErrors> {
-                Ok(to_report(levels, &error_tolerance)?)
+                Ok(to_report(levels)?)
             })
             .collect::<Result<Vec<Report>, ReportErrors>>()
             .map_err(|err| DayErrors::InvalidInputError(err.to_string()))?
@@ -118,7 +135,18 @@ impl DaySolver for Day2Solver {
     }
 
     fn solve_part2(&self, input: &str) -> Result<String, DayErrors> {
-        Ok(String::from("Not Implemented yet"))
+        let reports: Vec<Report> = parse_input(input)
+            .iter()
+            .map(|levels| -> Result<Report, ReportErrors> {
+                Ok(to_report_status_with_level_removal(levels)?)
+            })
+            .collect::<Result<Vec<Report>, ReportErrors>>()
+            .map_err(|err| DayErrors::InvalidInputError(err.to_string()))?
+            .into_iter()
+            .filter(|report| report.status == Safe)
+            .collect();
+
+        Ok(reports.len().to_string())
     }
 }
 
