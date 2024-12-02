@@ -1,34 +1,52 @@
 use crate::days::day01::Day1Solver;
-use crate::days::Day::Day2;
-use crate::define_advent_days;
-use thiserror::Error;
 use crate::days::day02::Day2Solver;
+use crate::days::DayError::{DaySolutionDoesNotExist, InvalidDay};
+use thiserror::Error;
 
-pub mod day01;
+mod day01;
 mod day02;
-mod day_macro;
 
 #[derive(Error, Debug)]
-pub enum DayErrors {
+pub enum DayError {
     #[error("Day number {0} is not implemented yet.")]
-    DayDoesNotExist(u8),
+    DaySolutionDoesNotExist(u8),
+
+    #[error("There is no day number {0} in advent calendar of December.")]
+    InvalidDay(u8),
 
     #[error("Received invalid input for day: {0}")]
     InvalidInputError(String),
+
+    #[error("Unknown error from day solution: '{0}'")]
+    Unknown(String)
 }
 
-define_advent_days!(Day1, Day2);
+pub struct Day(u8);
+
+impl TryFrom<u8> for Day {
+    type Error = DayError;
+
+    fn try_from(value: u8) -> Result<Self, Self::Error> {
+        match value {
+            1..=24 => Ok(Day(value)),
+            _ => Err(InvalidDay(value)),
+        }
+    }
+}
 
 pub trait DaySolver {
-    fn solve_part1(&self, input: &str) -> Result<String, DayErrors>;
-    fn solve_part2(&self, input: &str) -> Result<String, DayErrors>;
+    fn solve_part1(&self, input: &str) -> Result<String, DayError>;
+    fn solve_part2(&self, input: &str) -> Result<String, DayError>;
 }
 
-impl Day {
-    pub fn to_solver(&self) -> Box<dyn DaySolver> {
-        match self {
-            Day::Day1 => Box::new(Day1Solver),
-            Day::Day2 => Box::new(Day2Solver),
+impl TryFrom<Day> for Box<dyn DaySolver> {
+    type Error = DayError;
+
+    fn try_from(value: Day) -> Result<Self, Self::Error> {
+        match value {
+            Day(1) => Ok(Box::new(Day1Solver)),
+            Day(2) => Ok(Box::new(Day2Solver)),
+            Day(day_number) => Err(DaySolutionDoesNotExist(day_number)),
         }
     }
 }

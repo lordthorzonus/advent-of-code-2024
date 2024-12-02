@@ -1,16 +1,29 @@
 use crate::days::day02::LevelDirection::{Decreasing, Increasing, Stale};
-use crate::days::day02::ReportErrors::LevelInputError;
+use crate::days::day02::ReportError::{LevelInputError, UnsafeLevelTransition};
 use crate::days::day02::ReportStatus::{Safe, Unsafe};
-use crate::days::{DayErrors, DaySolver};
+use crate::days::{DayError, DaySolver};
 use std::cmp::PartialEq;
+use std::num::ParseIntError;
 use thiserror::Error;
 
 pub struct Day2Solver;
 
 #[derive(Error, Debug)]
-enum ReportErrors {
+enum ReportError {
     #[error("Invalid level input {0}")]
     LevelInputError(String),
+
+    #[error("Unsafe transition between levels {0} - {1}")]
+    UnsafeLevelTransition(i32, i32),
+}
+
+impl From<ReportError> for DayError {
+    fn from(value: ReportError) -> Self {
+        match value {
+            LevelInputError(err) => DayError::InvalidInputError(err),
+            err => DayError::Unknown(err.to_string()),
+        }
+    }
 }
 
 #[derive(PartialEq, Clone, Copy)]
@@ -27,126 +40,100 @@ enum ReportStatus {
 }
 
 struct Report {
-    levels: Vec<i32>,
     status: ReportStatus,
 }
 
 fn get_direction_for_levels(level1: &i32, level2: &i32) -> LevelDirection {
-    if level1 > level2 {
-        return Decreasing;
+    match level1.cmp(level2) {
+        std::cmp::Ordering::Greater => Decreasing,
+        std::cmp::Ordering::Less => Increasing,
+        std::cmp::Ordering::Equal => Stale,
     }
-
-    if level2 > level1 {
-        return Increasing;
-    }
-
-    Stale
 }
 
 fn is_safe_difference(level1: &i32, level2: &i32) -> bool {
-    let difference = (level1 - level2).abs();
-
-    match difference {
-        1..=3 => true,
-        _ => false,
-    }
+    (level1 - level2).abs() <= 3
 }
 
-fn get_report_status(levels: &Vec<i32>) -> Result<ReportStatus, ReportErrors> {
-    let first_level = levels
-        .get(0)
-        .ok_or(LevelInputError("No first level in the report".to_string()))?;
-    let second_level = levels
-        .get(1)
-        .ok_or(LevelInputError("No second level in the report".to_string()))?;
+fn get_report_status(levels: &Vec<i32>) -> Result<ReportStatus, ReportError> {
+    if levels.len() < 2 {
+        return Err(LevelInputError(
+            "Levels must contain at least two entries".to_string(),
+        ));
+    }
 
-    let initial_direction = get_direction_for_levels(first_level, second_level);
+    let initial_direction = get_direction_for_levels(&levels[0], &levels[1]);
 
     if initial_direction == Stale {
         return Ok(Unsafe);
     }
-    for (index, current_level) in levels.iter().enumerate() {
-        if let Some(next_level) = levels.get(index + 1) {
-            let direction = get_direction_for_levels(current_level, next_level);
 
-            if direction != initial_direction {
-                return Ok(Unsafe);
+    levels
+        .windows(2)
+        .try_fold(initial_direction, |prev_direction, window| {
+            let current_direction = get_direction_for_levels(&window[0], &window[1]);
+
+            if current_direction != prev_direction || !is_safe_difference(&window[0], &window[1]) {
+                return Err(UnsafeLevelTransition(window[0].clone(), window[1].clone()));
             }
 
-            if !is_safe_difference(current_level, next_level) {
-                return Ok(Unsafe);
-            }
-        }
-    }
-
-    Ok(Safe)
+            Ok(current_direction)
+        })
+        .map(|_| Safe)
+        .or(Ok(Unsafe))
 }
 
-fn to_report(levels: &Vec<i32>) -> Result<Report, ReportErrors> {
+fn to_report(levels: &Vec<i32>) -> Result<Report, ReportError> {
     Ok(Report {
-        levels: levels.clone(),
         status: get_report_status(levels)?,
     })
 }
 
-fn to_report_status_with_level_removal(levels: &Vec<i32>) -> Result<Report, ReportErrors> {
-    let mut report_status = get_report_status(levels)?;
-    let mut updated_levels = levels.clone();
-    let mut index_to_remove = 0;
-
-    while report_status == Unsafe && index_to_remove < levels.len() {
-        updated_levels = levels.clone();
-        updated_levels.remove(index_to_remove);
-        report_status = get_report_status(&updated_levels)?;
-        index_to_remove += 1
-    }
-
-    Ok(Report {
-        levels: updated_levels,
-        status: report_status
-    })
-}
-
-fn parse_input(input: &str) -> Vec<Vec<i32>> {
+fn parse_input(input: &str) -> Result<Vec<Vec<i32>>, ReportError> {
     input
         .lines()
         .map(|line| {
             line.split_whitespace()
-                .map(|item| item.parse().unwrap())
-                .collect::<Vec<i32>>()
+                .map(|item| {
+                    item.parse()
+                        .map_err(|e: ParseIntError| LevelInputError(e.to_string()))
+                })
+                .collect::<Result<Vec<i32>, _>>()
         })
-        .collect::<Vec<Vec<i32>>>()
+        .collect()
 }
 
 impl DaySolver for Day2Solver {
-    fn solve_part1(&self, input: &str) -> Result<String, DayErrors> {
-        let reports: Vec<Report> = parse_input(input)
+    fn solve_part1(&self, input: &str) -> Result<String, DayError> {
+        let reports = parse_input(input)
+            .map_err(Into::<DayError>::into)?
             .iter()
-            .map(|levels| -> Result<Report, ReportErrors> {
-                Ok(to_report(levels)?)
-            })
-            .collect::<Result<Vec<Report>, ReportErrors>>()
-            .map_err(|err| DayErrors::InvalidInputError(err.to_string()))?
+            .map(|levels| -> Result<Report, ReportError> { Ok(to_report(levels)?) })
+            .collect::<Result<Vec<Report>, ReportError>>()
+            .map_err(Into::<DayError>::into)?
             .into_iter()
-            .filter(|report| report.status == Safe)
-            .collect();
+            .filter(|report| report.status == Safe);
 
-        Ok(reports.len().to_string())
+        Ok(reports.count().to_string())
     }
 
-    fn solve_part2(&self, input: &str) -> Result<String, DayErrors> {
-        let reports: Vec<Report> = parse_input(input)
-            .iter()
-            .map(|levels| -> Result<Report, ReportErrors> {
-                Ok(to_report_status_with_level_removal(levels)?)
-            })
-            .collect::<Result<Vec<Report>, ReportErrors>>()
-            .map_err(|err| DayErrors::InvalidInputError(err.to_string()))?
+    fn solve_part2(&self, input: &str) -> Result<String, DayError> {
+        let reports = parse_input(input)
+            .map_err(Into::<DayError>::into)?
             .into_iter()
-            .filter(|report| report.status == Safe)
-            .collect();
+            .filter_map(|levels| {
+                // Attempt to find a safe subset by removing one element
+                levels.iter().enumerate().find_map(|(idx, _)| {
+                    let mut test_levels = levels.clone();
+                    test_levels.remove(idx);
+                    get_report_status(&test_levels)
+                        .ok()
+                        .filter(|status| status == &Safe)
+                })
+            })
+            .count();
 
-        Ok(reports.len().to_string())
+        Ok(reports.to_string())
     }
 }
 
@@ -166,7 +153,7 @@ mod tests {
     #[test]
     fn test_input_parsing() {
         assert_eq!(
-            parse_input(get_example_input()),
+            parse_input(get_example_input()).unwrap(),
             vec![
                 vec![7, 6, 4, 2, 1],
                 vec![1, 2, 7, 8, 9],

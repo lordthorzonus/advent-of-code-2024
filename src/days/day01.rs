@@ -1,10 +1,10 @@
-use crate::days::{DayErrors, DaySolver};
+use crate::days::{DayError, DaySolver};
 use std::collections::HashMap;
 use std::num::ParseIntError;
 
 pub struct Day1Solver;
 
-fn parse_input_to_lists(input: &str) -> Result<(Vec<i32>, Vec<i32>), DayErrors> {
+fn parse_input_to_lists(input: &str) -> Result<(Vec<i32>, Vec<i32>), DayError> {
     Ok(input
         .lines()
         .filter_map(|line| line.split_once("   "))
@@ -13,7 +13,7 @@ fn parse_input_to_lists(input: &str) -> Result<(Vec<i32>, Vec<i32>), DayErrors> 
         })
         .collect::<Result<Vec<_>, _>>()
         .map_err(|_| {
-            DayErrors::InvalidInputError(
+            DayError::InvalidInputError(
                 "Cannot parse the given input into number list".to_string(),
             )
         })?
@@ -37,11 +37,11 @@ fn calculate_similarity(number: &i32, occurrences: &HashMap<i32, i32>) -> i32 {
 }
 
 impl DaySolver for Day1Solver {
-    fn solve_part1(&self, input: &str) -> Result<String, DayErrors> {
+    fn solve_part1(&self, input: &str) -> Result<String, DayError> {
         let (mut left_list, mut right_list) = parse_input_to_lists(input)?;
 
         if left_list.len() != right_list.len() {
-            return Err(DayErrors::InvalidInputError(
+            return Err(DayError::InvalidInputError(
                 "The given lists are not of the same length.".to_string(),
             ));
         }
@@ -58,7 +58,7 @@ impl DaySolver for Day1Solver {
         Ok(distances.to_string())
     }
 
-    fn solve_part2(&self, input: &str) -> Result<String, DayErrors> {
+    fn solve_part2(&self, input: &str) -> Result<String, DayError> {
         let (left_list, right_list) = parse_input_to_lists(input)?;
         let occurrences = count_occurrences(&right_list);
         let similarities: i32 = left_list

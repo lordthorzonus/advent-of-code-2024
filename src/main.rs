@@ -3,7 +3,7 @@ mod utils;
 
 use std::error::Error;
 use clap::{Args, Parser, Subcommand};
-use crate::days::Day;
+use crate::days::{Day, DaySolver};
 use crate::utils::read_input_file;
 
 #[derive(Parser)]
@@ -47,7 +47,7 @@ struct Solution(
 fn execute_solve(args: &SolveArgs) -> Result<Solution, Box<dyn Error>> {
     let input = read_input_file(&args.input_file_path)?;
     let day: Day = args.day_number.try_into()?;
-    let solver = day.to_solver();
+    let solver: Box<dyn DaySolver> = day.try_into()?;
 
     Ok(Solution(solver.solve_part1(&input)?, solver.solve_part2(&input)?))
 }
