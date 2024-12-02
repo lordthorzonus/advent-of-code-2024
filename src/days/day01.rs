@@ -2,7 +2,7 @@ use crate::days::{DayErrors, DaySolver};
 use std::collections::HashMap;
 use std::num::ParseIntError;
 
-pub struct Day1;
+pub struct Day1Solver;
 
 fn parse_input_to_lists(input: &str) -> Result<(Vec<i32>, Vec<i32>), DayErrors> {
     Ok(input
@@ -36,7 +36,7 @@ fn calculate_similarity(number: &i32, occurrences: &HashMap<i32, i32>) -> i32 {
     number * number_of_occurrences
 }
 
-impl DaySolver for Day1 {
+impl DaySolver for Day1Solver {
     fn solve_part1(&self, input: &str) -> Result<String, DayErrors> {
         let (mut left_list, mut right_list) = parse_input_to_lists(input)?;
 
@@ -84,13 +84,13 @@ mod tests {
     }
     #[test]
     fn part1() {
-        let solution = Day1 {}.solve_part1(get_example_input()).unwrap();
+        let solution = Day1Solver {}.solve_part1(get_example_input()).unwrap();
         assert_eq!(solution, "11")
     }
 
     #[test]
     fn part2() {
-        let solution = Day1{}.solve_part2(get_example_input()).unwrap();
+        let solution = Day1Solver {}.solve_part2(get_example_input()).unwrap();
         assert_eq!(solution, "31")
     }
 }
