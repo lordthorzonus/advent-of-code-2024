@@ -72,15 +72,10 @@ fn sort_by_rule_lookup(
     number_a: &u32,
     number_b: &u32,
 ) -> bool {
-    if let Some(numbers_after) = lookup_map.get(number_a) {
-        if numbers_after.contains(number_b) {
-            return true;
-        }
-
-        return false;
+    match lookup_map.get(number_a) {
+        Some(numbers_after) => numbers_after.contains(number_b),
+        None => false
     }
-
-    false
 }
 
 impl DaySolver for Day5Solver {
