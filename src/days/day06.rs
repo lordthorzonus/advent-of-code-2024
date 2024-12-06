@@ -1,6 +1,5 @@
 use crate::days::{DayError, DaySolver};
 use std::collections::HashSet;
-use std::iter::Map;
 use std::ops::Add;
 
 pub struct Day6Solver;
@@ -57,9 +56,14 @@ where
     row.get::<usize>(coordinate.0.try_into().ok()?)
 }
 
-fn insert_obstacle_into_grid(obstacle_position: &Coordinate, grid: &Vec<Vec<MapNode>>) -> Vec<Vec<MapNode>> {
+fn insert_obstacle_into_grid(
+    obstacle_position: &Coordinate,
+    grid: &Vec<Vec<MapNode>>,
+) -> Vec<Vec<MapNode>> {
     let mut new_grid = grid.clone();
-    let mut row: &mut Vec<MapNode> = new_grid.get_mut::<usize>(obstacle_position.1.try_into().unwrap()).unwrap();
+    let row: &mut Vec<MapNode> = new_grid
+        .get_mut::<usize>(obstacle_position.1.try_into().unwrap())
+        .unwrap();
     let x: usize = obstacle_position.0.try_into().unwrap();
     row[x] = MapNode::Obstacle;
 
@@ -114,7 +118,6 @@ impl Guard {
     pub fn will_be_stuck_in_loop(mut self, grid: &Vec<Vec<MapNode>>) -> bool {
         let mut positions_visited_with_direction: HashSet<(Coordinate, Direction)> = HashSet::new();
         let mut position: Option<Coordinate> = Some(self.current_position.clone());
-        let mut times_visited_same_position = 0;
         let mut is_loop = false;
         while let Some(guard_position) = &position {
             let coordinate = guard_position.clone() + self.facing_direction.clone().into();
@@ -126,20 +129,20 @@ impl Guard {
                 }
                 Some(node) => match node {
                     MapNode::Path => {
-                        if (positions_visited_with_direction.contains(&(coordinate.clone(), self.facing_direction.clone()))) {
-                            times_visited_same_position += 1;
-
-                            if (times_visited_same_position > 3) {
-                                is_loop = true;
-                                break;
-                            }
+                        if positions_visited_with_direction
+                            .contains(&(coordinate.clone(), self.facing_direction.clone()))
+                        {
+                            is_loop = true;
+                            break;
                         }
-                        positions_visited_with_direction.insert((coordinate.clone(), self.facing_direction.clone()));
+                        positions_visited_with_direction
+                            .insert((coordinate.clone(), self.facing_direction.clone()));
                         self.current_position = coordinate.clone();
                         position = Some(coordinate.clone());
                     }
                     MapNode::Obstacle => {
-                        positions_visited_with_direction.insert((coordinate.clone(), self.facing_direction.clone()));
+                        positions_visited_with_direction
+                            .insert((coordinate.clone(), self.facing_direction.clone()));
                         self.facing_direction =
                             self.facing_direction.clone().turn_right_90_degrees()
                     }
@@ -192,7 +195,7 @@ fn parse_input(input: &str) -> Result<(Vec<Vec<MapNode>>, Guard), DayError> {
                                     "Cannot convert usize to i64",
                                 ))
                             })?,
-                            y.try_into().map_err(|e| {
+                            y.try_into().map_err(|_| {
                                 DayError::InvalidInputError(String::from(
                                     "Cannot convert usize to i64",
                                 ))
@@ -230,7 +233,11 @@ impl DaySolver for Day6Solver {
         initial_guard.traverse_grid(&grid);
         let mut obstacle_coordinates_that_cause_infinite_loop: HashSet<Coordinate> = HashSet::new();
 
-        for coordinate in initial_guard.traversed_path.iter().filter(|coordinate| *coordinate != &guard.clone().current_position) {
+        for coordinate in initial_guard
+            .traversed_path
+            .iter()
+            .filter(|coordinate| *coordinate != &guard.clone().current_position)
+        {
             let grid_with_obstacle = insert_obstacle_into_grid(&coordinate, &grid);
             let test_guard = guard.clone();
 
@@ -239,7 +246,9 @@ impl DaySolver for Day6Solver {
             }
         }
 
-        Ok(obstacle_coordinates_that_cause_infinite_loop.len().to_string())
+        Ok(obstacle_coordinates_that_cause_infinite_loop
+            .len()
+            .to_string())
     }
 }
 #[cfg(test)]

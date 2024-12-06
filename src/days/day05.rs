@@ -111,7 +111,7 @@ impl DaySolver for Day5Solver {
                     sort_by_rule_lookup(&lookup_map, number_a, number_b)
                 })
             })
-            .map(|mut update| {
+            .map(|update| {
                 update.sort_by(|number_a, number_b| {
                     if sort_by_rule_lookup(&lookup_map, number_a, number_b) {
                         Ordering::Less
