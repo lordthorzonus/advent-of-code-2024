@@ -7,6 +7,7 @@ use crate::days::day04::Day4Solver;
 use crate::days::day05::Day5Solver;
 use crate::days::day06::Day6Solver;
 use crate::days::day07::Day7Solver;
+use crate::days::day08::Day8Solver;
 
 mod day01;
 mod day02;
@@ -15,6 +16,7 @@ mod day04;
 mod day05;
 mod day06;
 mod day07;
+mod day08;
 
 #[derive(Error, Debug)]
 pub enum DayError {
@@ -61,6 +63,7 @@ impl TryFrom<Day> for Box<dyn DaySolver> {
             Day(5) => Ok(Box::new(Day5Solver)),
             Day(6) => Ok(Box::new(Day6Solver)),
             Day(7) => Ok(Box::new(Day7Solver)),
+            Day(8) => Ok(Box::new(Day8Solver)),
             Day(day_number) => Err(DaySolutionDoesNotExist(day_number)),
         }
     }
