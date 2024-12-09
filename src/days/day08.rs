@@ -58,7 +58,6 @@ impl Neg for &Point {
 }
 
 struct Antenna {
-    frequency: Frequency,
     point: Point,
 }
 
@@ -142,7 +141,7 @@ fn parse_input(input: &str) -> Map {
                 let point = Point::from_index(x, y);
                 let frequency = Frequency(c);
                 let antennas = antenna_map.entry(frequency.clone()).or_insert(vec![]);
-                antennas.push(Antenna { frequency, point })
+                antennas.push(Antenna { point })
             }
         })
     });
