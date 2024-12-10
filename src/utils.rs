@@ -1,3 +1,7 @@
+pub mod point;
+pub mod direction;
+pub mod grid;
+
 use std::{fs, io};
 use thiserror::Error;
 
